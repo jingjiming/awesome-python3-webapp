@@ -43,10 +43,10 @@ def merge(defaults, override):
 
 
 def to_dict(d):
-    D = Dict()
+    d = Dict()
     for k, v in d.items():
-        D[k] = to_dict(v) if isinstance(v, dict) else v
-    return D
+        d[k] = to_dict(v) if isinstance(v, dict) else v
+    return d
 
 
 configs = config_default.configs
