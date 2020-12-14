@@ -1,3 +1,4 @@
 aiohttp>=3.7.3
 aiomysql>=0.0.21
 mysqlclient>=1.4.6
+Jinja2>=2.11.2
