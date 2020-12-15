@@ -1,25 +1,26 @@
 #!/usr/bin/env python3
-# -*- coding:utf-8 -*-
+# -*- coding: utf-8 -*-
 
 __author__ = 'JM'
 
-"""
-async web application
-"""
+'''
+async web application.
+'''
 
-import asyncio
-import os
-import json
-import time
+import logging
 
+import asyncio, os, json, time
 from datetime import datetime
+
 from aiohttp import web
 from jinja2 import Environment, FileSystemLoader
 
+from config import configs
+
 import orm
 from coreweb import add_routes, add_static
-from config import configs
-import logging
+
+from handlers import cookie2user, COOKIE_NAME
 logging.basicConfig(level=logging.INFO)
 
 
@@ -45,18 +46,55 @@ def init_jinja2(app, **kw):
     app['__templating__'] = env
 
 
-async def logger_factory(app, handler):
-    async def logger(request):
+@asyncio.coroutine
+def logger_factory(app, handler):
+    @asyncio.coroutine
+    def logger(request):
         logging.info('Request: %s %s' % (request.method, request.path))
-        # await asyncio.sleep(0.3)
-        return (await handler(request))
+        # yield from asyncio.sleep(0.3)
+        return (yield from handler(request))
     return logger
 
 
-async def response_factory(app, handler):
-    async def response(request):
+@asyncio.coroutine
+def auth_factory(app, handler):
+    @asyncio.coroutine
+    def auth(request):
+        logging.info('check user: %s %s' % (request.method, request.path))
+        request.__user__ = None
+        cookie_str = request.cookies.get(COOKIE_NAME)
+        if cookie_str:
+            user = yield from cookie2user(cookie_str)
+            if user:
+                logging.info('set current user: %s' % user.email)
+                request.__user__ = user
+        if request.path.startswith('/manage/') and (request.__user__ is None or not request.__user__.admin):
+            return web.HTTPFound('/signin')
+        return (yield from handler(request))
+    return auth
+
+
+@asyncio.coroutine
+def data_factory(app, handler):
+    @asyncio.coroutine
+    def parse_data(request):
+        if request.method == 'POST':
+            if request.content_type.startswith('application/json'):
+                request.__data__ = yield from request.json()
+                logging.info('request json: %s' % str(request.__data__))
+            elif request.content_type.startswith('application/x-www-form-urlencoded'):
+                request.__data__ = yield from request.post()
+                logging.info('request form: %s' % str(request.__data__))
+        return (yield from handler(request))
+    return parse_data
+
+
+@asyncio.coroutine
+def response_factory(app, handler):
+    @asyncio.coroutine
+    def response(request):
         logging.info('Response handler...')
-        r = await handler(request)
+        r = yield from handler(request)
         if isinstance(r, web.StreamResponse):
             return r
         if isinstance(r, bytes):
@@ -76,6 +114,7 @@ async def response_factory(app, handler):
                 resp.content_type = 'application/json;charset=utf-8'
                 return resp
             else:
+                # r['__user__'] = request.__user__
                 resp = web.Response(body=app['__templating__'].get_template(template).render(**r).encode('utf-8'))
                 resp.content_type = 'text/html;charset=utf-8'
                 return resp
@@ -113,47 +152,14 @@ async def init():
     pw = configs.db.password
     db = configs.db.db
     await orm.create_pool(host=host, port=port, user=user, password=pw, db=db)
-    app = web.Application(middlewares=[
-        logger_factory, response_factory
-    ])
+    app = web.Application(middlewares=[logger_factory, response_factory])
     init_jinja2(app, filters=dict(datetime=datetime_filter))
     add_routes(app, "handlers")
     add_static(app)
     return app
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.info("Server started at 127.0.0.1:9000")
-    web.run_app(init(), host='127.0.0.1', port=9000)
-
-
-# async def init(loop):
-#     await orm.create_pool(loop=loop, host='127.0.0.1', port=3306, user='root', password='etonkids', db='awesome')
-#     app = web.Application(loop=loop, middlewares=[
-#         logger_factory, response_factory
-#     ])
-#     init_jinja2(app, filters=dict(datetime=datetime_filter))
-#     add_routes(app, 'handlers')
-#     add_static(app)
-#     srv = await loop.create_server(app.make_handler(), '127.0.0.1', 9000)
-#     logging.info('server started at http://127.0.0.1:9000')
-#     return srv
-#
-# loop = asyncio.get_event_loop()
-# loop.run_until_complete(init(loop))
-# loop.run_forever()
-
-# async def handle(request):
-#     name = request.match_info.get('name', "Anonymous")
-#     text = "Hello, " + name
-#     return web.Response(text=text, content_type='text/html')
-#
-#
-# app = web.Application()
-# app.add_routes([web.get('/', handle), web.get('/{name}', handle)])
-# logging.info('server started at http://127.0.0.1:9000...')
-#
-# if __name__ == '__main__':
-#     web.run_app(app, host='127.0.0.1', port=9000)
-
+    web.run_app(init(), host="127.0.0.1", port=9000)
 

@@ -2,12 +2,10 @@
 # -*- coding: utf-8 -*-
 
 """
-Default configuration.
+Override configurations.
 """
 
-
 __author__ = 'JM'
-
 
 configs = {
     'db': {

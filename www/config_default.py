@@ -2,12 +2,10 @@
 # -*- coding: utf-8 -*-
 
 """
-Default configuration.
+Default configurations.
 """
 
-
 __author__ = 'JM'
-
 
 configs = {
     'debug': True,

@@ -13,7 +13,7 @@ import config_override
 
 class Dict(dict):
     """
-    Simple dict but support access as x.y style
+    Simple dict but support access as x.y style.
     """
     def __init__(self, names=(), values=(), **kw):
         super(Dict, self).__init__(**kw)
@@ -44,19 +44,17 @@ def merge(defaults, override):
 
 
 def to_dict(d):
-    d = Dict()
+    _dict = Dict()
     for k, v in d.items():
-        d[k] = to_dict(v) if isinstance(v, dict) else v
-    return d
+        _dict[k] = to_dict(v) if isinstance(v, dict) else v
+    return _dict
 
 
 configs = config_default.configs
-
 
 try:
     configs = merge(configs, config_override.configs)
 except ImportError:
     pass
-
 
 configs = to_dict(configs)

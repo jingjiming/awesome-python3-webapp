@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# -*- coding:utf-8 -*-
+# -*- coding: utf-8 -*-
 
 """
 Models for user, blog, comment.
@@ -7,7 +7,8 @@ Models for user, blog, comment.
 
 __author__ = 'JM'
 
-import time, uuid
+import time
+import uuid
 
 from orm import Model, StringField, BooleanField, FloatField, TextField
 
@@ -25,10 +26,7 @@ class User(Model):
     admin = BooleanField()
     name = StringField(ddl='varchar(50)')
     image = StringField(ddl='varchar(500)')
-    """日期和时间用float类型存储在数据库中，而不是datetime类型，
-    这么做的好处是不必关心数据库的时区以及时区转换问题，排序非常简单，
-    显示的时候，只需要做一个float到str的转换，也非常容易。"""
-    create_time = FloatField(default=time.time)
+    created_at = FloatField(default=time.time)
 
 
 class Blog(Model):
@@ -39,18 +37,18 @@ class Blog(Model):
     user_name = StringField(ddl='varchar(50)')
     user_image = StringField(ddl='varchar(500)')
     name = StringField(ddl='varchar(50)')
-    summary = StringField(ddl='varchar(200')
+    summary = StringField(ddl='varchar(200)')
     content = TextField()
-    create_time = FloatField(default=time.time)
+    created_at = FloatField(default=time.time)
 
 
-class Commenet(Model):
+class Comment(Model):
     __table__ = 'comments'
 
     id = StringField(primary_key=True, default=next_id, ddl='varchar(50)')
     blog_id = StringField(ddl='varchar(50)')
     user_id = StringField(ddl='varchar(50)')
     user_name = StringField(ddl='varchar(50)')
-    user_image = StringField(ddl='varchar(500')
+    user_image = StringField(ddl='varchar(500)')
     content = TextField()
-    create_time = FloatField(default=time.time)
+    created_at = FloatField(default=time.time)
