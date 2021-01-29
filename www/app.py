@@ -6,13 +6,21 @@ __author__ = 'JM'
 '''
 async web application.
 '''
-
+# 系统日志
 import logging
-
-import asyncio, os, json, time
+# 异步IO
+import asyncio
+# 系统接口
+import os
+# json编码解码模块
+import json
+# 系统时间模块
+import time
+# 日期模块
 from datetime import datetime
 
 from aiohttp import web
+# jinja2前端模板引擎
 from jinja2 import Environment, FileSystemLoader
 
 from config import configs
@@ -21,7 +29,7 @@ import orm
 from coreweb import add_routes, add_static
 
 from handlers import cookie2user, COOKIE_NAME
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
 
 def init_jinja2(app, **kw):
@@ -114,7 +122,7 @@ def response_factory(app, handler):
                 resp.content_type = 'application/json;charset=utf-8'
                 return resp
             else:
-                # r['__user__'] = request.__user__
+                r['__user__'] = request.__user__
                 resp = web.Response(body=app['__templating__'].get_template(template).render(**r).encode('utf-8'))
                 resp.content_type = 'text/html;charset=utf-8'
                 return resp
@@ -152,7 +160,9 @@ async def init():
     pw = configs.db.password
     db = configs.db.db
     await orm.create_pool(host=host, port=port, user=user, password=pw, db=db)
-    app = web.Application(middlewares=[logger_factory, response_factory])
+    app = web.Application(middlewares=[
+        logger_factory, auth_factory, response_factory
+    ])
     init_jinja2(app, filters=dict(datetime=datetime_filter))
     add_routes(app, "handlers")
     add_static(app)
@@ -162,4 +172,3 @@ async def init():
 if __name__ == "__main__":
     logging.info("Server started at 127.0.0.1:9000")
     web.run_app(init(), host="127.0.0.1", port=9000)
-
