@@ -29,6 +29,9 @@ import orm
 from coreweb import add_routes, add_static
 
 from handlers import cookie2user, COOKIE_NAME
+root_logger = logging.getLogger()
+for handle in root_logger.handlers:
+    root_logger.removeHandler(handle)
 logging.basicConfig(level=logging.DEBUG)
 
 
@@ -170,5 +173,5 @@ async def init():
 
 
 if __name__ == "__main__":
-    logging.info("Server started at 127.0.0.1:9000")
     web.run_app(init(), host="127.0.0.1", port=9000)
+    logging.info("Server started at 127.0.0.1:9000")
